@@ -1,5 +1,5 @@
  /*
- * Copyright 2017 Ayush Gaud 
+ * Copyright 2017 Ayush Gaud
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public:
 			std::cout << "Goal point set to: " << x << " " << y << " " << z << std::endl;
 			if(set_start)
 				plan();
-			
+
 		}
 	}
 	void updateMap(std::shared_ptr<fcl::CollisionGeometry> map)
@@ -94,15 +94,16 @@ public:
 	// Constructor
 	planner(void)
 	{
+// set the size of the Quadcopter
 		Quadcopter = std::shared_ptr<fcl::CollisionGeometry>(new fcl::Box(0.3, 0.3, 0.1));
 		fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(new octomap::OcTree(0.1)));
 		tree_obj = std::shared_ptr<fcl::CollisionGeometry>(tree);
-		
+
 		space = ob::StateSpacePtr(new ob::SE3StateSpace());
 
 		// create a start state
 		ob::ScopedState<ob::SE3StateSpace> start(space);
-		
+
 		// create a goal state
 		ob::ScopedState<ob::SE3StateSpace> goal(space);
 
@@ -131,7 +132,7 @@ public:
 		prev_goal[2] = 0;
 		goal->as<ob::SO3StateSpace::StateType>(1)->setIdentity();
 		// goal.random();
-		
+
 	    // set state validity checking for this space
 		si->setStateValidityChecker(std::bind(&planner::isStateValid, this, std::placeholders::_1 ));
 
@@ -214,7 +215,7 @@ public:
 			msg.joint_names.clear();
 			msg.points.clear();
 			msg.joint_names.push_back("Quadcopter");
-			
+
 			for (std::size_t path_idx = 0; path_idx < pth->getStateCount (); path_idx++)
 			{
 				const ob::SE3StateSpace::StateType *se3state = pth->getState(path_idx)->as<ob::SE3StateSpace::StateType>();
@@ -242,7 +243,7 @@ public:
 			}
 			traj_pub.publish(msg);
 
-			
+
 	        //Path smoothing using bspline
 
 			og::PathSimplifier* pathBSpline = new og::PathSimplifier(si);
@@ -251,7 +252,7 @@ public:
 			// std::cout << "Smoothed Path" << std::endl;
 			// path_smooth.print(std::cout);
 
-			
+
 			//Publish path as markers
 
 			visualization_msgs::Marker marker;
@@ -268,7 +269,7 @@ public:
 
 	            // extract the second component of the state and cast it to what we expect
 				const ob::SO3StateSpace::StateType *rot = se3state->as<ob::SO3StateSpace::StateType>(1);
-				
+
 				marker.header.frame_id = "world";
 				marker.header.stamp = ros::Time();
 				marker.ns = "path";
@@ -291,9 +292,9 @@ public:
 				marker.color.b = 0.0;
 				vis_pub.publish(marker);
 				// ros::Duration(0.1).sleep();
-				std::cout << "Published marker: " << idx << std::endl;  
+				std::cout << "Published marker: " << idx << std::endl;
 			}
-			
+
 			// Clear memory
 			pdef->clearSolutionPaths();
 			replan_flag = false;
@@ -382,12 +383,12 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr &msg, planner* planne
 	 // octomap::OcTree temp_tree(0.1);
 	 // temp_tree.readBinary(filename);
 	 // fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(&temp_tree));
-	
+
 
 	// convert octree to collision object
 	octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(octomap_msgs::msgToMap(*msg));
 	fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
-	
+
 	// Update the octree used for collision checking
 	planner_ptr->updateMap(std::shared_ptr<fcl::CollisionGeometry>(tree));
 	planner_ptr->replan();
@@ -423,7 +424,7 @@ int main(int argc, char **argv)
 
 	vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 	traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
-	
+
 	std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
 	ros::spin();
