@@ -118,8 +118,8 @@ public:
         bounds.setHigh(0,100);
         bounds.setLow(1,-100);
         bounds.setHigh(1,100);
-        bounds.setLow(2,-100);
-        bounds.setHigh(2,100);
+        bounds.setLow(2,9);
+        bounds.setHigh(2,11);
 
         //eric_wang:add the bounds to the state space
 		space->as<ob::SE3StateSpace>()->setBounds(bounds);
@@ -462,9 +462,9 @@ int main(int argc, char **argv)
     //ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/bebop2/odometry_sensor1/odometry", 1, boost::bind(&odomCb, _1, &planner_object));
     //ros::Subscriber goal_sub = n.subscribe<geometry_msgs::PointStamped>("/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
     //ros::Subscriber start_sub = n.subscribe<geometry_msgs::PointStamped>("/start/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
-    planner_object.setStart(-99, 0, -99);
+    planner_object.setStart(-99, 0, 10);
     planner_object.init_start();
-    planner_object.setGoal(99, 99, 99);
+    planner_object.setGoal(99, 99, 10);
     //vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 100 );
     //traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
 
