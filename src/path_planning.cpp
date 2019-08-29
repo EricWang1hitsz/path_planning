@@ -68,7 +68,10 @@ public:
 		start->as<ob::SO3StateSpace::StateType>(1)->setIdentity();
 		pdef->clearStartStates();
 		pdef->addStartState(start);
-	}
+
+        //eric_wang:
+        std::cout<<"Satrt point set to: "<< x << " " << y << " " << z << std::endl;
+        }
 	void setGoal(double x, double y, double z)
 	{
 		if(prev_goal[0] != x || prev_goal[1] != y || prev_goal[2] != z)
@@ -94,11 +97,12 @@ public:
 	// Constructor
 	planner(void)
 	{
-// set the size of the Quadcopter
+        //eric_wang:set the size of the Quadcopter
 		Quadcopter = std::shared_ptr<fcl::CollisionGeometry>(new fcl::Box(0.3, 0.3, 0.1));
 		fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(new octomap::OcTree(0.1)));
 		tree_obj = std::shared_ptr<fcl::CollisionGeometry>(tree);
 
+        //eric_wang:the state space of the solution
 		space = ob::StateSpacePtr(new ob::SE3StateSpace());
 
 		// create a start state
@@ -110,13 +114,14 @@ public:
 		// set the bounds for the R^3 part of SE(3)
 		ob::RealVectorBounds bounds(3);
 
-		bounds.setLow(0,-20);
-		bounds.setHigh(0,20);
-		bounds.setLow(1,-20);
-		bounds.setHigh(1,20);
-		bounds.setLow(2,0);
-		bounds.setHigh(2,20);
+        bounds.setLow(0,-100);
+        bounds.setHigh(0,100);
+        bounds.setLow(1,-100);
+        bounds.setHigh(1,100);
+        bounds.setLow(2,-100);
+        bounds.setHigh(2,100);
 
+        //eric_wang:add the bounds to the state space
 		space->as<ob::SE3StateSpace>()->setBounds(bounds);
 
 		// construct an instance of  space information from this state space
@@ -180,7 +185,14 @@ public:
 	{
 
 	    // create a planner for the defined space
-		ob::PlannerPtr plan(new og::InformedRRTstar(si));
+        //ob::PlannerPtr plan(new og::InformedRRTstar(si));
+        og::InformedRRTstar* rrt = new og::InformedRRTstar(si);
+
+        //eric_wang: Set the range the planner is supposd to use
+        rrt->setRange(0.2);
+
+        ob::PlannerPtr plan(rrt);
+
 
 	    // set the problem we are trying to solve for the planner
 		plan->setProblemDefinition(pdef);
@@ -189,13 +201,18 @@ public:
 		plan->setup();
 
 	    // print the settings for this space
+        //eric_wang:
+        std::cout<<"******print the setting for this space:******"<<std::endl;
 		si->printSettings(std::cout);
 
 	    // print the problem settings
+        //eric_wang:
+        std::cout<<"******print the problem settings:******"<<std::endl;
 		pdef->print(std::cout);
 
 	    // attempt to solve the problem within one second of planning time
-		ob::PlannerStatus solved = plan->solve(2);
+        ob::PlannerStatus solved = plan->solve(10);
+
 
 		if (solved)
 		{
@@ -204,9 +221,9 @@ public:
 			std::cout << "Found solution:" << std::endl;
 			ob::PathPtr path = pdef->getSolutionPath();
 			og::PathGeometric* pth = pdef->getSolutionPath()->as<og::PathGeometric>();
-			pth->printAsMatrix(std::cout);
+            pth->printAsMatrix(std::cout);
 	        // print the path to screen
-	        // path->print(std::cout);
+            path->print(std::cout);
 			trajectory_msgs::MultiDOFJointTrajectory msg;
 			trajectory_msgs::MultiDOFJointTrajectoryPoint point_msg;
 
@@ -394,6 +411,29 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr &msg, planner* planne
 	planner_ptr->replan();
 }
 
+//eric_wang:
+//void octomapCallback2 (const octomap_msgs::Octomap::ConstPtr &msg, planner* planner_ptr)
+void octomapCallback2 (planner* planner_ptr)
+{
+
+
+    //loading octree from binary
+      const std::string filename = "/home/hit/geb079.bt";
+      octomap::OcTree temp_tree(0.5);
+      temp_tree.readBinary(filename);
+      fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(&temp_tree));
+
+    // convert octree to collision object
+    //octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(octomap_msgs::msgToMap(msg));
+    octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(tree);
+    //fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
+    tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
+
+    // Update the octree used for collision checking
+    planner_ptr->updateMap(std::shared_ptr<fcl::CollisionGeometry>(tree));
+    planner_ptr->replan();
+}
+
 void odomCb(const nav_msgs::Odometry::ConstPtr &msg, planner* planner_ptr)
 {
 	planner_ptr->setStart(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
@@ -414,16 +454,19 @@ void goalCb(const geometry_msgs::PointStamped::ConstPtr &msg, planner* planner_p
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "octomap_planner");
-	ros::NodeHandle n;
+    ros::NodeHandle n;
 	planner planner_object;
 
-	ros::Subscriber octree_sub = n.subscribe<octomap_msgs::Octomap>("/octomap_binary", 1, boost::bind(&octomapCallback, _1, &planner_object));
-	ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/bebop2/odometry_sensor1/odometry", 1, boost::bind(&odomCb, _1, &planner_object));
-	ros::Subscriber goal_sub = n.subscribe<geometry_msgs::PointStamped>("/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
-	// ros::Subscriber start_sub = n.subscribe<geometry_msgs::PointStamped>("/start/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
-
-	vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-	traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
+    ros::Subscriber octree_sub = n.subscribe<octomap_msgs::Octomap>("/octomap_binary", 1, boost::bind(&octomapCallback, _1, &planner_object));
+    //ros::Subscriber octree_sub = octomapCallback2(planner_object);
+    //ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/bebop2/odometry_sensor1/odometry", 1, boost::bind(&odomCb, _1, &planner_object));
+    //ros::Subscriber goal_sub = n.subscribe<geometry_msgs::PointStamped>("/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
+    //ros::Subscriber start_sub = n.subscribe<geometry_msgs::PointStamped>("/start/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
+    planner_object.setStart(-99, 0, -99);
+    planner_object.init_start();
+    planner_object.setGoal(99, 99, 99);
+    //vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 100 );
+    //traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
 
 	std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
