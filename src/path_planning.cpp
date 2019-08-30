@@ -23,6 +23,7 @@
 #include "visualization_msgs/Marker.h"
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <geometry_msgs/Pose.h>
 
 #include <ompl/base/spaces/SE3StateSpace.h>
@@ -50,8 +51,8 @@ namespace og = ompl::geometric;
 // Declear some global variables
 
 //ROS publishers
-ros::Publisher vis_pub;
-ros::Publisher traj_pub;
+//ros::Publisher vis_pub;
+//ros::Publisher traj_pub;
 
 class planner {
 public:
@@ -97,6 +98,11 @@ public:
 	// Constructor
 	planner(void)
 	{
+        //eric_wang:
+        vis_pub = nh.advertise<visualization_msgs::Marker>( "visualization_marker", 1);
+        traj_pub = nh.advertise<nav_msgs::Path>("waypoints",1);
+        //ros::Subscriber octree_sub = nh.subscribe<octomap_msgs::Octomap>("/octomap_binary", 1, boost::bind(&octomapCallback, _1, &planner_object));
+
         //eric_wang:set the size of the Quadcopter
 		Quadcopter = std::shared_ptr<fcl::CollisionGeometry>(new fcl::Box(0.3, 0.3, 0.1));
 		fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(new octomap::OcTree(0.1)));
@@ -118,8 +124,8 @@ public:
         bounds.setHigh(0,100);
         bounds.setLow(1,-100);
         bounds.setHigh(1,100);
-        bounds.setLow(2,9);
-        bounds.setHigh(2,11);
+        bounds.setLow(2,0);
+        bounds.setHigh(2,100);
 
         //eric_wang:add the bounds to the state space
 		space->as<ob::SE3StateSpace>()->setBounds(bounds);
@@ -186,7 +192,7 @@ public:
 
 	    // create a planner for the defined space
         //ob::PlannerPtr plan(new og::InformedRRTstar(si));
-        og::InformedRRTstar* rrt = new og::InformedRRTstar(si);
+        og::RRTstar* rrt = new og::RRTstar(si);
 
         //eric_wang: Set the range the planner is supposd to use
         rrt->setRange(0.2);
@@ -224,14 +230,17 @@ public:
             pth->printAsMatrix(std::cout);
 	        // print the path to screen
             path->print(std::cout);
-			trajectory_msgs::MultiDOFJointTrajectory msg;
-			trajectory_msgs::MultiDOFJointTrajectoryPoint point_msg;
+            //trajectory_msgs::MultiDOFJointTrajectory msg;
+            //trajectory_msgs::MultiDOFJointTrajectoryPoint point_msg;
+            //eric_wang:
+            nav_msgs::Path msg;
+            geometry_msgs::PoseStamped pose;
 
 			msg.header.stamp = ros::Time::now();
-			msg.header.frame_id = "world";
-			msg.joint_names.clear();
-			msg.points.clear();
-			msg.joint_names.push_back("Quadcopter");
+            msg.header.frame_id = "map";
+            //msg.joint_names.clear();
+            //msg.points.clear();
+            //msg.joint_names.push_back("Quadcopter");
 
 			for (std::size_t path_idx = 0; path_idx < pth->getStateCount (); path_idx++)
 			{
@@ -243,22 +252,33 @@ public:
 	            // extract the second component of the state and cast it to what we expect
 				const ob::SO3StateSpace::StateType *rot = se3state->as<ob::SO3StateSpace::StateType>(1);
 
-				point_msg.time_from_start.fromSec(ros::Time::now().toSec());
-				point_msg.transforms.resize(1);
+//				point_msg.time_from_start.fromSec(ros::Time::now().toSec());
+//				point_msg.transforms.resize(1);
 
-				point_msg.transforms[0].translation.x= pos->values[0];
-				point_msg.transforms[0].translation.y = pos->values[1];
-				point_msg.transforms[0].translation.z = pos->values[2];
+//				point_msg.transforms[0].translation.x= pos->values[0];
+//				point_msg.transforms[0].translation.y = pos->values[1];
+//				point_msg.transforms[0].translation.z = pos->values[2];
 
-				point_msg.transforms[0].rotation.x = rot->x;
-				point_msg.transforms[0].rotation.y = rot->y;
-				point_msg.transforms[0].rotation.z = rot->z;
-				point_msg.transforms[0].rotation.w = rot->w;
+//				point_msg.transforms[0].rotation.x = rot->x;
+//				point_msg.transforms[0].rotation.y = rot->y;
+//				point_msg.transforms[0].rotation.z = rot->z;
+//				point_msg.transforms[0].rotation.w = rot->w;
+                pose.pose.position.x = pos->values[0];
+                pose.pose.position.y = pos->values[1];
+                pose.pose.position.z = pos->values[2];
 
-				msg.points.push_back(point_msg);
+                pose.pose.orientation.x = rot->x;
+                pose.pose.orientation.y = rot->y;
+                pose.pose.orientation.z = rot->z;
+                pose.pose.orientation.w = rot->w;
+
+                msg.poses.push_back(pose);
+
 
 			}
-			traj_pub.publish(msg);
+            //eric_wang:
+            std::cout<<"publish the <nav_msgs::path>msgs"<<std::endl;
+            traj_pub.publish(msg);
 
 
 	        //Path smoothing using bspline
@@ -273,8 +293,9 @@ public:
 			//Publish path as markers
 
 			visualization_msgs::Marker marker;
+
 			marker.action = visualization_msgs::Marker::DELETEALL;
-			vis_pub.publish(marker);
+            //vis_pub.publish(marker);
 
 			for (std::size_t idx = 0; idx < path_smooth->getStateCount (); idx++)
 			{
@@ -287,12 +308,12 @@ public:
 	            // extract the second component of the state and cast it to what we expect
 				const ob::SO3StateSpace::StateType *rot = se3state->as<ob::SO3StateSpace::StateType>(1);
 
-				marker.header.frame_id = "world";
-				marker.header.stamp = ros::Time();
+                marker.header.frame_id = "odom";
+                marker.header.stamp = ros::Time::now();
 				marker.ns = "path";
 				marker.id = idx;
 				marker.type = visualization_msgs::Marker::CUBE;
-				marker.action = visualization_msgs::Marker::ADD;
+                marker.action = visualization_msgs::Marker::ADD;
 				marker.pose.position.x = pos->values[0];
 				marker.pose.position.y = pos->values[1];
 				marker.pose.position.z = pos->values[2];
@@ -307,8 +328,9 @@ public:
 				marker.color.r = 0.0;
 				marker.color.g = 1.0;
 				marker.color.b = 0.0;
-				vis_pub.publish(marker);
-				// ros::Duration(0.1).sleep();
+                vis_pub.publish(marker);
+                ros::Duration(0.01).sleep();
+                marker.lifetime = ros::Duration();
 				std::cout << "Published marker: " << idx << std::endl;
 			}
 
@@ -319,7 +341,11 @@ public:
 		}
 		else
 			std::cout << "No solution found" << std::endl;
-	}
+    }
+
+    //ros nodehandle
+    ros::NodeHandle nh;
+
 private:
 
 	// construct the state space we are planning in
@@ -327,12 +353,18 @@ private:
 
 	// construct an instance of  space information from this state space
 	ob::SpaceInformationPtr si;
-
 	// create a problem instance
 	ob::ProblemDefinitionPtr pdef;
 
 	// goal state
 	double prev_goal[3];
+
+    //ROS publisher
+    ros::Publisher vis_pub;
+    ros::Publisher traj_pub;
+
+    //Ros node
+    //ros::NodeHandle nh;
 
 	og::PathGeometric* path_smooth = NULL;
 
@@ -396,38 +428,15 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr &msg, planner* planne
 
 
     //loading octree from binary
-	 // const std::string filename = "/home/rrc/power_plant.bt";
-	 // octomap::OcTree temp_tree(0.1);
-	 // temp_tree.readBinary(filename);
-	 // fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(&temp_tree));
+     // const std::string filename = "/home/rrc/power_plant.bt";
+     // octomap::OcTree temp_tree(0.1);
+     // temp_tree.readBinary(filename);
+     // fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(&temp_tree));
 
-
-	// convert octree to collision object
-	octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(octomap_msgs::msgToMap(*msg));
-	fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
-
-	// Update the octree used for collision checking
-	planner_ptr->updateMap(std::shared_ptr<fcl::CollisionGeometry>(tree));
-	planner_ptr->replan();
-}
-
-//eric_wang:
-//void octomapCallback2 (const octomap_msgs::Octomap::ConstPtr &msg, planner* planner_ptr)
-void octomapCallback2 (planner* planner_ptr)
-{
-
-
-    //loading octree from binary
-      const std::string filename = "/home/hit/geb079.bt";
-      octomap::OcTree temp_tree(0.5);
-      temp_tree.readBinary(filename);
-      fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(&temp_tree));
 
     // convert octree to collision object
-    //octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(octomap_msgs::msgToMap(msg));
-    octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(tree);
-    //fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
-    tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
+    octomap::OcTree* tree_oct = dynamic_cast<octomap::OcTree*>(octomap_msgs::msgToMap(*msg));
+    fcl::OcTree* tree = new fcl::OcTree(std::shared_ptr<const octomap::OcTree>(tree_oct));
 
     // Update the octree used for collision checking
     planner_ptr->updateMap(std::shared_ptr<fcl::CollisionGeometry>(tree));
@@ -454,18 +463,19 @@ void goalCb(const geometry_msgs::PointStamped::ConstPtr &msg, planner* planner_p
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "octomap_planner");
-    ros::NodeHandle n;
+    //ros::NodeHandle n;
 	planner planner_object;
 
-    ros::Subscriber octree_sub = n.subscribe<octomap_msgs::Octomap>("/octomap_binary", 1, boost::bind(&octomapCallback, _1, &planner_object));
+    ros::Subscriber octree_sub = planner_object.nh.subscribe<octomap_msgs::Octomap>("/octomap_binary", 1, boost::bind(&octomapCallback, _1, &planner_object));
+    ROS_INFO("Subcribe the octomap_messages");
     //ros::Subscriber octree_sub = octomapCallback2(planner_object);
     //ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/bebop2/odometry_sensor1/odometry", 1, boost::bind(&odomCb, _1, &planner_object));
     //ros::Subscriber goal_sub = n.subscribe<geometry_msgs::PointStamped>("/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
     //ros::Subscriber start_sub = n.subscribe<geometry_msgs::PointStamped>("/start/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
-    planner_object.setStart(-99, 0, 10);
+    planner_object.setStart(0, 0, 0);
     planner_object.init_start();
-    planner_object.setGoal(99, 99, 10);
-    //vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 100 );
+    planner_object.setGoal(5, 5, 2);
+    //vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 100);
     //traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
 
 	std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
