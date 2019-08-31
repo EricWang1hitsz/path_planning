@@ -237,7 +237,7 @@ public:
             geometry_msgs::PoseStamped pose;
 
 			msg.header.stamp = ros::Time::now();
-            msg.header.frame_id = "map";
+            msg.header.frame_id = "odom";
             //msg.joint_names.clear();
             //msg.points.clear();
             //msg.joint_names.push_back("Quadcopter");
@@ -474,7 +474,7 @@ int main(int argc, char **argv)
     //ros::Subscriber start_sub = n.subscribe<geometry_msgs::PointStamped>("/start/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
     planner_object.setStart(0, 0, 0);
     planner_object.init_start();
-    planner_object.setGoal(5, 5, 2);
+    planner_object.setGoal(-5, -5, 2);
     //vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 100);
     //traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
 

@@ -12,7 +12,12 @@
 
 3.显示path的是nav_msgs，显示trajectory可以安装下moveit-ros-visualization;
 
-##TODO
+### 2019.8.31
+turtlebot：
+
+![](assets/markdown-img-paste-20190831111334456.png)
+
+## TODO
 
 #### 2019.8.30
 
