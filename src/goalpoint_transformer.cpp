@@ -15,8 +15,10 @@ void waypointCb(const geometry_msgs::PointStamped::ConstPtr &msg)
     geometry_msgs::PointStamped point_base_link;
     tf::pointStampedMsgToTF(*msg, point_odom);
     tf::Stamped<tf::Point> point_stamped;
+    //eric_wang:return the transform of the vector"point_odom"
     point_stamped.setData(transform * point_odom);
     tf::pointStampedTFToMsg(point_stamped, point_base_link);
+    //eric_wang:geometry_msgs::PointStamped point_base_link;
     transformed_pub.publish(point_base_link);
     // ROS_INFO("Published Pose %d %d %d", point_base_link.point.x, point_base_link.point.y, point_base_link.point.z);
   }
@@ -33,7 +35,10 @@ int main(int argc, char** argv){
   transformed_pub = node.advertise<geometry_msgs::PointStamped>("/transformed/clicked_point", 1);
   ros::Rate rate(10.0);
   while (node.ok()){
-
+      //eric_wang: the transform is not real-time. Error if not try-catch.
+      //the transform from the frame /odom to frame /base_link;
+      //ros::Time(0) will just get us the latest available transform;
+      //store the resulting transform in the object "transform";
     try{
       listener.lookupTransform("odom", "base_link", 
        ros::Time(0), transform);
