@@ -21,10 +21,10 @@ turtlebot：
 
 #### 2019.8.30
 
-1.利用``goalpoint_transformer.cpp``在rviz上发布start、goal消息；
+1.利用``goalpoint_transformer.cpp``在rviz上发布start、goal消息；**√√√**
 
 2.规划路径的约束：
 
-``1`` 路径与障碍物需要有重合部分；
+``1`` 机器人与障碍物需要有重合部分；
 ``2`` 路径搜索范围自定义设置；
 ``3`` 如何建三维点云地图，WQ推荐Categorapher;

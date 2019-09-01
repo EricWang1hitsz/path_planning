@@ -30,9 +30,11 @@
 #include <ompl/base/spaces/SE3StateSpace.h>
 #include <ompl/base/OptimizationObjective.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-// #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/SimpleSetup.h>
+//eric_wang:Constrained State Space
+//#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
 
 #include <ompl/config.h>
 #include <iostream>
@@ -468,13 +470,13 @@ int main(int argc, char **argv)
 
     ros::Subscriber octree_sub = planner_object.nh.subscribe<octomap_msgs::Octomap>("/octomap_binary", 1, boost::bind(&octomapCallback, _1, &planner_object));
     ROS_INFO("Subcribe the octomap_messages");
-    //ros::Subscriber octree_sub = octomapCallback2(planner_object);
     //ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/bebop2/odometry_sensor1/odometry", 1, boost::bind(&odomCb, _1, &planner_object));
-    //ros::Subscriber goal_sub = n.subscribe<geometry_msgs::PointStamped>("/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
+    //eric_wang:pulish the goal point with the "Publish Point" in Rviz;
+    ros::Subscriber goal_sub = planner_object.nh.subscribe<geometry_msgs::PointStamped>("/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
     //ros::Subscriber start_sub = n.subscribe<geometry_msgs::PointStamped>("/start/clicked_point", 1, boost::bind(&goalCb, _1, &planner_object));
     planner_object.setStart(0, 0, 0);
     planner_object.init_start();
-    planner_object.setGoal(-5, -5, 2);
+    //planner_object.setGoal(-5, -5, 2);
     //vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 100);
     //traj_pub = n.advertise<trajectory_msgs::MultiDOFJointTrajectory>("waypoints",1);
 
