@@ -34,7 +34,7 @@
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/SimpleSetup.h>
 //eric_wang:Constrained State Space
-//#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
+#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
 
 #include <ompl/config.h>
 #include <iostream>
