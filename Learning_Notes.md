@@ -12,11 +12,19 @@
 
 3.显示path的是nav_msgs，显示trajectory可以安装下moveit-ros-visualization;
 
-### 2019.8.31
+##### 2019.8.31
 turtlebot：
 
 ![](assets/markdown-img-paste-20190831111334456.png)
 
+
+#### 2019.9.4
+
+1. pinocchio提供contact dynamics 确保geometric model与surface接触；
+2. Geometrical objects are stored using a modified version of FCL. We thus rely on this library for distance and collision computations.
+3. HPP: hpp_model; hpp_constraint; hpp_core.
+
+**Hpp和OMPL一样，也是运动规划的库，但是HPP更加全面，性能更好！**
 ## TODO
 
 #### 2019.8.30
@@ -25,9 +33,9 @@ turtlebot：
 
 2.规划路径的约束：
 
-``1`` 机器人与障碍物需要有重合部分:
-``1.1``利用pcl碰撞检测算法原理；
-``1.2``首先找到需要重合的一些点；
+``1`` 机器人与障碍物需要有重合部分:``Pinocchio``  
+``1.1``利用pcl碰撞检测算法原理：``FCL``
+``1.2``首先找到需要重合的一些点：``Hpp_affordance``
 ``2`` 路径搜索范围自定义设置；
 ``3`` 如何建三维点云地图，WQ推荐Categorapher（搁置）;
 
@@ -35,3 +43,6 @@ turtlebot：
 #### 2019.9.3
 ``1`` HPP library
 ``1`` FCL library
+``1`` Pinocchio library
+
+**这三个库非常重要，要看明白啊！**
