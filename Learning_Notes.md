@@ -24,6 +24,13 @@ turtlebot：
 2. Geometrical objects are stored using a modified version of FCL. We thus rely on this library for distance and collision computations.
 3. HPP: hpp_model; hpp_constraint; hpp_core.
 
+#### 2019.9.6
+
+hpp-rbprm是HPP Library的一个demo！ 先看HPP，再看demo；
+
+``rbprm-device.cc``
+``rbprm-rom-validation.cc``
+
 **Hpp和OMPL一样，也是运动规划的库，但是HPP更加全面，性能更好！**
 ## TODO
 
@@ -46,3 +53,8 @@ turtlebot：
 ``1`` Pinocchio library
 
 **这三个库非常重要，要看明白啊！**
+
+#### 2019.9.6
+
+``1``安装好hpp-rbprm, 先跑一跑脚本例子；
+``2``搞明白里面的C++
