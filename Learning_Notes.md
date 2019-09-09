@@ -40,7 +40,7 @@ hpp-rbprm是HPP Library的一个demo！ 先看HPP，再看demo；
 
 2.规划路径的约束：
 
-``1`` 机器人与障碍物需要有重合部分:``Pinocchio``  
+``1`` 机器人与障碍物(环境)需要有重合部分:``Pinocchio``  
 ``1.1``利用pcl碰撞检测算法原理：``FCL``
 ``1.2``首先找到需要重合的一些点：``Hpp_affordance``
 ``2`` 路径搜索范围自定义设置；
@@ -58,3 +58,4 @@ hpp-rbprm是HPP Library的一个demo！ 先看HPP，再看demo；
 
 ``1``安装好hpp-rbprm, 先跑一跑脚本例子；
 ``2``搞明白里面的C++
+``3``宏的应用
